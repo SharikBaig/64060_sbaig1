@@ -1,0 +1,52 @@
+
+#This command is used to import the file in R, however there are other ways to import the file in R
+data4 <- read.csv(file.choose(), header = TRUE)
+
+#Calculate Mean of Opens
+mean(data4$Opens)
+
+#Calculate SD of Opens
+sd(data4$Opens)
+
+#Calculate Mean of Clicks
+mean(data4$Clicks)
+
+margin.table(data4, 2)
+#Calculate SD of Clicks
+sd(data4$Clicks)
+
+#Calculate median of Opens
+median(data4$Opens)
+
+#Calculate IQR of Opens
+IQR(data4$Opens)
+
+#Calculate Median of Clicks
+median(data4$Clicks)
+
+#Calculate IQR of Clicks
+IQR(data4$Clicks)
+
+#Calculate count of each month
+table(data4$Month)
+
+#Import Library ggplot2
+library(ggplot2)
+
+#Log transformation of opens data
+log(data4$Opens)
+
+#Log transformation of Clicks data
+log(data4$Clicks)
+
+#Scatterplot of Opens Vs Clicks        
+plot(data4$Opens,data4$Clicks)  
+
+#Scatterplot of Opens Vs Revenue        
+plot(data4$Opens,data4$Revenue) 
+
+#Scatterplot of Clicks Vs Revenue        
+plot(data4$Clicks,data4$Revenue)  
+
+
+
