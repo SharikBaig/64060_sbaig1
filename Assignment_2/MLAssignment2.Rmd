@@ -1,0 +1,130 @@
+---
+title: "sbaig1_assgnment2"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+  library(readr)
+  library(dplyr)
+  library(dummies)
+  library(caret)
+  library(class)
+
+##Import the Data
+
+
+
+setwd("C:/Users/shari/OneDrive/Desktop/Business Analytics/Sem 1/Business Analytics/Assignment2")
+Bankdata<- read.csv("C:/Users/shari/OneDrive/Desktop/Business Analytics/Sem 1/Business Analytics/Assignment2/UniversalBank.csv")
+
+summary(Bankdata)
+library(caret)
+Bankdata$Personal.Loan<- as.factor(Bankdata$Personal.Loan)
+library(dummies)
+dummy_model<-dummyVars(~Education, data=Bankdata)
+head(predict(dummy_model,Bankdata))
+Bankdata_dummy <-dummy.data.frame(Bankdata, names =c("Education"), sep="-")
+UB<-subset(Bankdata_dummy,select = -c(1, 5))
+head(UB)
+##Splitting the Data into Test and validation
+set.seed(15)
+Train_Index <-createDataPartition(UB$Personal.Loan,p=0.6, list = FALSE)
+#use 60% for training and the remaining for validation
+Train <-UB[Train_Index,]
+Valid <- UB[-Train_Index,]
+train.norm.df<-Train
+valid.norm.df<-Valid
+##Normalising the Data
+norm.values<-preProcess(Train[,-10], method = c("range"))
+train.norm.df[,-10] <- predict(norm.values,Train[,-10])
+valid.norm.df[,-10]<-predict(norm.values,Valid[,-10])
+##Modelling using K=1
+library(FNN)
+nn <- knn(train = train.norm.df[, -10], test = valid.norm.df[, -10], 
+          cl = train.norm.df[, 10], k = 1, prob=TRUE)
+head(nn)
+##value of k that provides the best performance
+library(caret)
+accuracy.df <-data.frame(k= seq(1,14,1), accuracy = rep(0,14))
+for(i in 1:14) {
+                  knn <- knn(train.norm.df[, -10], valid.norm.df[, -10], cl = train.norm.df[, 10], k = i)
+                  accuracy.df[i, 2] <- confusionMatrix(knn, valid.norm.df[, 10])$overall[1] 
+                }
+accuracy.df
+which.max((accuracy.df$accuracy))
+##Test data development
+L_Predictors<-UB[,-10]
+L_labels<-UB[,10]
+Test <- data.frame(40, 10, 84, 2, 2, 0, 1, 0, 0, 0, 0, 1, 1)
+colnames(Test) <- colnames(L_Predictors)
+Test.norm.df <- Test
+head(Test.norm.df)
+##combining Training and Validation set to normalise new set
+Traval.norm.df <- UB
+norm.values <- preProcess(UB[,-10], method = c("range"))
+Traval.norm.df[,-10]<-predict(norm.values, UB[,-10])
+Test.norm.df<-predict(norm.values, Test)
+##Predicting using k=1
+nn <- knn(train = Traval.norm.df[, -10], test = Test.norm.df, 
+          cl = Traval.norm.df[, 10], k = 1, prob=TRUE)
+##View predicted class
+head(nn)
+
+## If a Customer is classified as zero, customer will not accept the loan
+
+##Predicting using k=3
+nn <- knn(train = Traval.norm.df[, -10], test = Test.norm.df, 
+cl = Traval.norm.df[, 10], k = 3, prob=TRUE)
+##View predicted class
+head(nn)
+##Customer classified as zero, customer will not accept the loan
+
+##Show the confusion matrix for the validation data that results from using the best k.
+knn.valid <- knn(train.norm.df[, -10],valid.norm.df[, -10],cl=train.norm.df[, 10],k=3,prob = 0.5)
+confusionMatrix(knn.valid, valid.norm.df[, 10])
+##Error types 
+##True Negative - 1794
+##False Negative - 14
+##True Positive - 118
+##False Positive - 74
+##Sensitivity(TPR) - TP/(TP+FN) = 118/(118+14)=0.8939
+#specificity(TNR)- TN/(TN+FP) = 1794/(1794+74)=0.9603
+
+#modelling with diff partitioning -  training, validation, and test sets (50% : 30% : 20%)
+#split the data 
+set.seed(15)
+Train_Index_2 <-createDataPartition(UB$Personal.Loan,p=0.5, list = FALSE)
+#use 50% for training and the rest for validation and test
+Train_2 <-UB[Train_Index_2,]
+ValTest <- UB[-Train_Index_2,]
+Valid_Index  <- createDataPartition(ValTest$Personal.Loan,p=0.6, list = FALSE)
+Valid_2 <- ValTest[Valid_Index,]
+Test_2 <- ValTest[-Valid_Index,]
+#copy original data
+train_2.norm.df<-Train_2
+valid_2.norm.df<-Valid_2
+test_2.norm.df <-Test_2
+#normalize data
+norm.values_2<-preProcess(Train_2[,-10], method = c("center", "scale"))
+train_2.norm.df[,-10] <- predict(norm.values_2,Train_2[,-10])
+valid_2.norm.df[,-10]<-predict(norm.values_2,Valid_2[,-10])
+test_2.norm.df[,-10]<-predict(norm.values_2,Test_2[,-10])
+#Modelling using k=3 for testset
+library(FNN)
+nn_2 <- knn(train = train_2.norm.df[, -10], test = test_2.norm.df[, -10], 
+          cl = train_2.norm.df[, 10], k = 3, prob=TRUE)
+#view predicted class
+head(nn_2)
+#Modelling using k=3 for validation set
+nn_2_valid<- knn(train = train_2.norm.df[, -10], test = valid_2.norm.df[, -10], 
+          cl = train_2.norm.df[, 10], k = 3, prob=TRUE)
+#view predicted class
+head(nn_2_valid)
+#compare confusion matrix for test set with validation set
+confusionMatrix(nn_2, test_2.norm.df[, 10])
+#Accuracy for Test is 0.956
+confusionMatrix(nn_2_valid, valid_2.norm.df[, 10])
+#Accuracy for validation is 0.954 & test set is 0.956
+
