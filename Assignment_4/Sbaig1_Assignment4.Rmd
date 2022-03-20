@@ -1,0 +1,151 @@
+---
+title: "Sbaig1_Assignment4"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("C:/Users/shari/OneDrive/Desktop/Business Analytics/Sem 1/Machine Learning/ML_Assignment4")
+
+Pharma <- read.csv("C:/Users/shari/OneDrive/Desktop/Business Analytics/Sem 1/Machine Learning/ML_Assignment4/Pharmaceuticals.csv")
+```
+
+
+
+```{r}
+library(factoextra) # clustering algorithms & visualization
+library(ISLR)
+library(tidyverse) # data manipulation
+library(caret)
+library(grid)
+library(modeltools)
+library(stats4)
+library(lattice)
+library(flexclust)
+library(cluster)
+```
+
+
+```{r}
+set.seed(123)
+head(Pharma)
+```
+
+
+##Use cluster analysis to explore and analyze the given dataset as follows:
+## A. Use only the numerical variables (1 to 9) to cluster the 21 firms. Justify the various choices made in conducting the cluster analysis, such as weights for different variables, the specific clustering algorithm(s) used, the number of clusters formed, and so on.  
+
+```{r}
+Numeric<- Pharma[,3:11]
+head(Numeric)
+```
+
+## Normalizing the data framewith Range and Scale method.
+
+```{r}
+Numeric <- scale(Numeric)
+distance_Numeric <-get_dist(Numeric, method = "euclidean", stand = FALSE)
+```
+
+## In the below code we can see the distance between each observation and color code is provided depending on the observation values.
+
+
+```{r}
+fviz_dist(distance_Numeric, order = FALSE, show_labels = TRUE, lab_size = NULL, gradient = list(low = "red", mid = "white", high = "blue"))
+```
+
+## Using the elbow method below to find the optimal k
+```{r}
+elbowpharma <- scale(Numeric)
+fviz_nbclust(Numeric,kmeans,method="wss")
+```
+
+
+## Looking at the above graph we can see that there is an elbow at 2, however it is still unclear due to less sharpness in the graphical representation.
+
+## Using the Silhouette method below 
+
+```{r}
+fviz_nbclust(Numeric,kmeans,method="silhouette")
+```
+
+## We will use the Silhouette method becuase of the clear representation of K=5.
+
+```{r}
+k <- kmeans(Numeric, centers = 5, nstart = 25)
+k
+```
+
+## Below finding cluster center for all rows and colomns
+
+```{r}
+k$centers
+```
+
+## Number of observation in each cluster
+
+```{r}
+k$size
+```
+
+## Observation and their respective cluster label.
+
+```{r}
+k$cluster[c(21,20,19)]
+```
+
+## Applying Kmeans clustering with 5 clusters of the size 4,2,4,8,4.
+
+```{r}
+fviz_cluster(k, data=Numeric)
+```
+
+## On the cluster graph above, we can see that there are 5 clusters, each with its own color and shape. The center of the cluster is the centriod or the center point. We have reached the final center points after 25 restarts as there is no change until and unless the new data is added.
+
+
+```{r}
+Fi <- kmeans(Numeric,5)
+clusplot(Numeric, Fi$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+```
+
+## B. Interpret the clusters with respect to the numerical variables used in forming the clusters. 
+
+
+```{r}
+aggregate(Numeric,by=list(Fi$cluster),FUN=mean)
+```
+
+
+```{r}
+Num1 <- data.frame(Numeric, Fi$cluster)
+Num1
+```
+
+## Cluster_1 = has Highest Rev_growth and low leverage and low beta
+##Cluster_2 = has Highest PE ratio, Lowest ROE, Lowest ROA, Lowest Asset Turnover, Lowest Net ProfitMargin
+##Cluster_3 = has Highest Market Cap, Highest ROE, Highest ROA, Highest Asset Turnover
+##Cluster_4 = has Highest Net Profit Margin, Lowest Beta, Lowest PE Ratio, Lowest Rev growth.
+##Cluster_5 = has Highest Beta, Highest Leverage, Highest Rev growth and Lowest Market Cap.
+
+## C. Is there a pattern in the clusters with respect to the numerical variables ?
+
+##  1. Based on the average recommended variable, there is a pattern in the cluster. 2. Despite having the highest market capitalization, highest ROE, highest ROA, and highest asset turnover, cluster 3 doesn't have a median sales recommendation. 3. Instead, cluster 3 has strong purchase recommendations. 4. Most of the time, Cluster 2 with the lowest P / E, ROE, ROA, asset turnover, and net return has pending recommendations. 5.  Cluster 4, which has the highest net margin, the lowest beta, the lowest PE ratio, and the lowest revenue growth, is most often recommended for hold. 
+
+## D. Provide an appropriate name for each cluster using any or all of the variables in the dataset.
+
+## We can name various clusters based on their dependence on the quantitative variables.
+##Cluster_1 - Lowest Leverage cluster and Highest Rev_growth.
+##Cluster_2 - High PE ratio, Low ROE, Low ROA, Low Asset Turnover and Negative Net Profit Margin Cluster
+##Cluster_3 - High Market Cap, ROE, ROA, Asset Turnover cluster
+##Cluster_4 - High Net Profit Margin, High Low Beta and Negative Rev growth cluster
+##Cluster_5 - High Beta, Negative Leverage, Low Rev growth and Low Market Cap cluster
+
+
+
+
+
